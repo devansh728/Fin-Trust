@@ -72,8 +72,9 @@ export default function AuthPage() {
       }
       // On success, save token and redirect to home page
       const data = await res.json()
-      if (data && data.accessToken) {
+      if (data && data.accessToken && data.refreshToken) {
         localStorage.setItem("authToken", data.accessToken)
+        localStorage.setItem("refreshToken", data.refreshToken)
       }
       window.location.href = "/home"
     } catch (err: any) {

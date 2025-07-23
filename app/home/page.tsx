@@ -70,12 +70,11 @@ export default function HomePage() {
     try {
       const token = localStorage.getItem("authToken") || ""
       const refreshToken = localStorage.getItem("refreshToken") || ""
+      const headers: Record<string, string> = { "Authorization": `Bearer ${token}` };
+      if (refreshToken) headers["Authorization-Refresh"] = `Bearer ${refreshToken}`;
       const res = await fetch(NOTIFICATIONS_API_URL, {
         credentials: "include",
-        headers: {
-          "Authorization": `Bearer ${token}`,
-          "Authorization-Refresh": refreshToken ? `Bearer ${refreshToken}` : undefined,
-        },
+        headers,
       })
       // Handle new access token if present
       const newAccessToken = res.headers.get("X-New-Access-Token")
@@ -98,7 +97,14 @@ export default function HomePage() {
           usecase: item.useCase || item.usecase || "",
           timestamp: item.createdAt ? new Date(item.createdAt).toLocaleString() : "",
           status : item.status || "pending",
-          dynamicFields: item.dynamicFields || [],
+          dynamicFields: Array.isArray(item.dynamicFields)
+            ? item.dynamicFields.map((f: any) => ({
+                name: f.key,
+                label: f.value,
+                type: f.type || "text",
+                required: !!f.required
+              }))
+            : [],
         }
       })
       setRequests(mapped)
@@ -132,13 +138,14 @@ export default function HomePage() {
       const dto = {
         status: "REJECTED"
       }
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+      };
+      if (refreshToken) headers["Authorization-Refresh"] = `Bearer ${refreshToken}`;
       const res = await fetch(`http://localhost:8081/consent/respond/${id}`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`,
-          "Authorization-Refresh": refreshToken ? `Bearer ${refreshToken}` : undefined,
-        },
+        headers,
         body: JSON.stringify(dto),
       })
       const newAccessToken = res.headers.get("X-New-Access-Token")
@@ -157,12 +164,11 @@ export default function HomePage() {
     try {
       const token = localStorage.getItem("authToken") || ""
       const refreshToken = localStorage.getItem("refreshToken") || ""
+      const headers: Record<string, string> = { "Authorization": `Bearer ${token}` };
+      if (refreshToken) headers["Authorization-Refresh"] = `Bearer ${refreshToken}`;
       const res = await fetch(`http://localhost:8081/api/notifications/${id}`, {
         method: "DELETE",
-        headers: {
-          "Authorization": `Bearer ${token}`,
-          "Authorization-Refresh": refreshToken ? `Bearer ${refreshToken}` : undefined,
-        },
+        headers,
       })
       const newAccessToken = res.headers.get("X-New-Access-Token")
       if (newAccessToken) {
@@ -184,13 +190,14 @@ export default function HomePage() {
         const dto = {
           status: "APPROVED"
         }
+        const headers: Record<string, string> = {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        };
+        if (refreshToken) headers["Authorization-Refresh"] = `Bearer ${refreshToken}`;
         const res = await fetch(`http://localhost:8081/consent/respond/${selectedRequest.id}`, {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${token}`,
-            "Authorization-Refresh": refreshToken ? `Bearer ${refreshToken}` : undefined,
-          },
+          headers,
           body: JSON.stringify(dto),
         })
         const newAccessToken = res.headers.get("X-New-Access-Token")
@@ -225,13 +232,14 @@ export default function HomePage() {
       try {
         const token = localStorage.getItem("authToken") || ""
         const refreshToken = localStorage.getItem("refreshToken") || ""
+        const headers: Record<string, string> = {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        };
+        if (refreshToken) headers["Authorization-Refresh"] = `Bearer ${refreshToken}`;
         const res = await fetch(`http://localhost:8081/form/submit/${selectedRequest.requestId}`, {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${token}`,
-            "Authorization-Refresh": refreshToken ? `Bearer ${refreshToken}` : undefined,
-          },
+          headers,
           body: JSON.stringify(dynamicFormValues),
         })
         const newAccessToken = res.headers.get("X-New-Access-Token")
@@ -440,7 +448,7 @@ export default function HomePage() {
                   <ul className="list-disc ml-6">
                     {selectedRequest.dynamicFields.map((field) => (
                       <li key={field.name}>
-                        <span className="font-medium">{field.label}</span> ({field.type})
+                        <span className="font-medium">{field.name}</span> - {field.type}
                         {field.required && <span className="text-red-500 ml-1">*</span>}
                       </li>
                     ))}
